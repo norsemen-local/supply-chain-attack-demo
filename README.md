@@ -201,6 +201,89 @@ sudo iptables -A INPUT -p tcp --dport 4444 -j ACCEPT
 
 ## 📋 Execution Steps
 
+### **Phase 0: AWS Credential Setup (One-Time)**
+
+⚠️ **IMPORTANT**: This must be completed before Phase 2 (Victim Setup).
+
+**Purpose:** Create AWS credentials that will be "stolen" during the demo.
+
+---
+
+#### **Scenario A: Real AWS Account (Full Demo)**
+
+If you have an AWS account and want to demonstrate actual cloud enumeration:
+
+**Step 1: Create Restricted IAM User**
+
+Run this on **any machine** with AWS CLI configured (doesn't have to be C2 or victim):
+
+```bash
+cd 5-aws-infrastructure
+./setup_aws.sh
+```
+
+**What it does:**
+- Creates IAM user `cortex-xdr-demo-restricted`
+- Attaches read-only policy (List/Get/Describe only)
+- Generates access key
+- Saves credentials to `demo_aws_credentials`
+
+**Step 2: Transfer Credentials**
+
+If you created credentials on a different machine:
+
+```bash
+# Copy the generated demo_aws_credentials file to your demo environment
+scp 5-aws-infrastructure/demo_aws_credentials user@victim-machine:/path/to/supply-chain-attack-demo/5-aws-infrastructure/
+```
+
+---
+
+#### **Scenario B: Demo Credentials (Credential Theft Only)**
+
+If you don't have AWS account or only want to demo credential theft (not cloud enumeration):
+
+**Step 1: Create Demo Credentials File**
+
+```bash
+cd 5-aws-infrastructure
+cp demo_aws_credentials.template demo_aws_credentials
+```
+
+**Step 2: Edit with Fake Credentials**
+
+Edit `demo_aws_credentials` with fake values:
+
+```ini
+[default]
+aws_access_key_id = AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+region = us-east-1
+```
+
+**Note:** These fake credentials will be stolen and exfiltrated, but Phase 4 (AWS enumeration) will fail.
+
+---
+
+#### **Verification**
+
+Before proceeding, ensure:
+
+```bash
+# Check file exists
+ls -la 5-aws-infrastructure/demo_aws_credentials
+
+# Check contents (Linux)
+cat 5-aws-infrastructure/demo_aws_credentials
+
+# Check contents (Windows)
+Get-Content 5-aws-infrastructure\demo_aws_credentials
+```
+
+✅ **You're ready when:** `demo_aws_credentials` file exists with AWS credentials (real or fake)
+
+---
+
 ### **Phase 1: C2 Server Setup (Linux)**
 
 **Option A: Automated (Recommended)**
@@ -230,12 +313,14 @@ See [EXECUTION_GUIDE.md](EXECUTION_GUIDE.md) for manual setup instructions.
 
 ### **Phase 2: Victim Setup & Attack**
 
+⚠️ **Prerequisite:** Phase 0 must be completed (AWS credentials file must exist)
+
 #### **On Windows Victim:**
 
 ```powershell
 cd C:\path\to\supply-chain-attack-demo\3-victim-application
 
-# Step 1: Setup AWS credentials (one-time)
+# Step 1: Setup AWS credentials (copies from 5-aws-infrastructure/demo_aws_credentials)
 .\setup_aws_creds.ps1
 
 # Step 2: Configure pip to use attacker's PyPI
