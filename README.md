@@ -39,11 +39,9 @@ A complete end-to-end simulation demonstrating a realistic supply chain attack:
 
 ```
 supply-chain-attack-demo/
-├── README.md                          # This file
+├── README.md                          # This file (start here!)
 ├── EXECUTION_GUIDE.md                 # Detailed step-by-step instructions
 ├── WARP.md                            # Troubleshooting & agent instructions
-├── DEPLOYMENT_READY.md                # Deployment checklist
-├── QUICK_START_CHECKLIST.md           # Quick reference
 ├── demo_aws_credentials.template      # AWS credentials template
 │
 ├── 1-attacker-infrastructure/         # C2 server (Linux)
@@ -81,14 +79,123 @@ supply-chain-attack-demo/
 
 ---
 
+## 📋 Prerequisites
+
+### **C2 Server (Linux)**
+
+**Required:**
+- Linux operating system (tested on Ubuntu 20.04+, Kali Linux)
+- Python 3.8 or higher
+- `tmux` - Terminal multiplexer for managing sessions
+- Network connectivity to victim machine
+
+**Installation:**
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install python3 python3-pip tmux
+
+# Red Hat/CentOS
+sudo yum install python3 python3-pip tmux
+```
+
+**Python Dependencies:**
+```bash
+cd 1-attacker-infrastructure
+pip3 install -r requirements.txt
+```
+
+**Network Requirements:**
+- Ports 8080 (PyPI server) and 4444 (C2 listener) must be accessible from victim
+- Firewall rules allowing inbound connections on these ports
+
+---
+
+### **Victim Machine (Windows or Linux)**
+
+**Windows Requirements:**
+- Windows 10/11 or Windows Server 2016+
+- Python 3.8 or higher
+- PowerShell 5.1 or higher (pre-installed on Windows 10+)
+- pip package manager
+- Network connectivity to C2 server
+
+**Installation (Windows):**
+```powershell
+# Download Python from python.org and install
+# Verify installation
+python --version
+pip --version
+```
+
+**Linux Requirements:**
+- Any modern Linux distribution
+- Python 3.8 or higher
+- pip package manager
+- bash shell
+- Network connectivity to C2 server
+
+**Installation (Linux):**
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install python3 python3-pip
+
+# Red Hat/CentOS
+sudo yum install python3 python3-pip
+```
+
+**Network Requirements:**
+- Outbound connectivity to C2 server on ports 8080 and 4444
+- DNS resolution (for pip to fallback to real PyPI if needed)
+
+---
+
+### **AWS Account (Optional - For Phase 4)**
+
+**For demo purposes:**
+- Use provided `demo_aws_credentials.template`
+- No real AWS account needed for credential theft demo
+
+**For full cloud enumeration:**
+- AWS account with IAM user creation permissions
+- AWS CLI installed (optional, for cleanup)
+- Restricted IAM user with read-only permissions
+
+**AWS CLI Installation:**
+```bash
+# Linux/macOS
+pip3 install awscli
+
+# Windows
+pip install awscli
+```
+
+---
+
+### **Network Configuration**
+
+**Lab Setup:**
+```
+C2 Server (Linux)          Victim Machine
+192.168.0.236      <──────>  192.168.0.X
+  ↓ ports 8080, 4444
+```
+
+**Firewall Rules (C2 Server):**
+```bash
+# Allow inbound on C2 ports
+sudo ufw allow 8080/tcp
+sudo ufw allow 4444/tcp
+
+# Or using iptables
+sudo iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 4444 -j ACCEPT
+```
+
+---
+
 ## 🚀 Quick Start (5 Minutes)
-
-### Prerequisites
-
-- **C2 Server**: Linux machine with Python 3.8+, tmux
-- **Victim Machine**: Windows or Linux with Python 3.8+, pip
-- **Network**: Both machines can communicate
-- **Optional**: AWS account for phase 4 (cloud enumeration)
 
 ---
 
@@ -317,10 +424,9 @@ This project is designed for:
 
 ## 📚 Documentation
 
-- **[EXECUTION_GUIDE.md](EXECUTION_GUIDE.md)** - Detailed step-by-step instructions
-- **[WARP.md](WARP.md)** - Complete troubleshooting guide
-- **[DEPLOYMENT_READY.md](DEPLOYMENT_READY.md)** - Deployment checklist
-- **[QUICK_START_CHECKLIST.md](QUICK_START_CHECKLIST.md)** - Quick reference card
+- **[README.md](README.md)** - This file - Quick start and overview
+- **[EXECUTION_GUIDE.md](EXECUTION_GUIDE.md)** - Detailed step-by-step instructions with screenshots
+- **[WARP.md](WARP.md)** - Complete troubleshooting guide and agent instructions
 
 ---
 
