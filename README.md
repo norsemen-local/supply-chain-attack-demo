@@ -18,11 +18,12 @@ A complete end-to-end simulation demonstrating a realistic supply chain attack:
 ┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
 │  C2 Server      │      │  Victim Machine  │      │  AWS Cloud      │
 │  (Linux)        │◄─────┤  (Windows/Linux) │      │                 │
-│                 │      │                  │      │                 │
-│ • PyPI Server   │ Creds│ • pip install    │ Enum │ • S3 Buckets    │
-│   (port 8080)   │◄─────┤ • aws-data-utils │─────►│ • IAM Users     │
+│                 │ Creds│                  │      │                 │
+│ • PyPI Server   │◄─────┤ • pip install    │      │ • S3 Buckets    │
+│   (port 8080)   │      │ • aws-data-utils │      │ • IAM Users     │
 │ • C2 Listener   │      │ • Credentials    │      │ • EC2 Instances │
 │   (port 4444)   │      │   stolen         │      │                 │
+│ • AWS Enum      │─────────────────────────────────►│ (Enumeration)  │
 └─────────────────┘      └──────────────────┘      └─────────────────┘
 ```
 
