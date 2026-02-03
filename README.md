@@ -454,38 +454,6 @@ aws iam delete-user --user-name demo-restricted-user
 
 ---
 
-## 🛡️ Detection Opportunities
-
-### EDR/XDR Detection Points:
-
-**Phase 1: Package Installation**
-- Suspicious network connection during `pip install`
-- Source distribution installation (not wheel)
-- Connection to non-standard PyPI server
-
-**Phase 2: Credential Access**
-- Python process accessing `~/.aws/credentials`
-- File read from sensitive credential locations
-- Unusual process tree (`pip` → `python setup.py`)
-
-**Phase 3: Exfiltration**
-- Outbound connection to unknown IP during package install
-- Data transmission to non-corporate destination
-- Network connection from `setup.py` script
-
-**Phase 4: Cloud Abuse**
-- AWS API enumeration from unexpected source IP
-- High-volume AWS API calls (enumeration pattern)
-- Access to multiple AWS services in short timeframe
-
-### Cortex XDR Alerts Expected:
-- Process execution chain anomaly
-- Sensitive file access
-- Network connection to suspicious endpoint
-- AWS API abuse pattern
-
----
-
 ## ⚠️ Security & Ethics
 
 ### **Lab Environment Only**
