@@ -23,7 +23,7 @@ A complete end-to-end simulation demonstrating a realistic supply chain attack:
 │   (port 8080)   │      │ • aws-data-utils │      │ • IAM Users     │
 │ • C2 Listener   │      │ • Credentials    │      │ • EC2 Instances │
 │   (port 4444)   │      │   stolen         │      │                 │
-│ • AWS Enum      │─────────────────────────────────►│ (Enumeration)  │
+│ • AWS Enum      │───────────────────────────────►│  (Enumeration)  │
 └─────────────────┘      └──────────────────┘      └─────────────────┘
 ```
 
